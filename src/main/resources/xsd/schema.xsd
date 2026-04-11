@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://minstroy.ru/execdoc/schema"
+           xmlns="http://minstroy.ru/execdoc/schema"
+           elementFormDefault="qualified">
+    <xs:element name="ExecutiveDocument">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="DocumentNumber" type="xs:string"/>
+                <xs:element name="DocumentDate" type="xs:date"/>
+                <xs:element name="Contractor" type="xs:string"/>
+                <xs:element name="ProjectCode" type="xs:string"/>
+                <xs:element name="Description" type="xs:string"/>
+                <xs:element name="ResponsiblePerson" type="xs:string"/>
+                <xs:element name="ApprovedBy" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
