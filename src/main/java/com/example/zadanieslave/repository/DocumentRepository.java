@@ -7,13 +7,23 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
-import java.util.UUID;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface DocumentRepository extends JpaRepository<Document, UUID> {
-    List<Document> findByProjectId(UUID projectId);
+
     Page<Document> findByProjectId(UUID projectId, Pageable pageable);
 
-    @Query("SELECT d FROM Document d JOIN FETCH d.versions WHERE d.id = :id")
+    @Query("SELECT DISTINCT d FROM Document d " +
+            "JOIN FETCH d.project " +
+            "JOIN FETCH d.uploadedBy " +
+            "LEFT JOIN FETCH d.versions " +
+            "WHERE d.project.id = :projectId")
+    List<Document> findByProjectIdWithRelations(@Param("projectId") UUID projectId);
+    @Query("SELECT d FROM Document d " +
+            "JOIN FETCH d.project " +
+            "JOIN FETCH d.uploadedBy " +
+            "LEFT JOIN FETCH d.versions " +
+            "WHERE d.id = :id")
     Optional<Document> findByIdWithVersions(@Param("id") UUID id);
 }

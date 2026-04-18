@@ -8,7 +8,6 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 @SpringBootApplication(scanBasePackages = "com.example.zadanieslave")
 @EnableAsync
-@EnableAspectJAutoProxy
 public class ZadanieslaveApplication {
 
     public static void main(String[] args) {

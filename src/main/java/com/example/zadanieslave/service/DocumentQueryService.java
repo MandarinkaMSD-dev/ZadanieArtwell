@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.zadanieslave.audit.Auditable;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -20,19 +19,19 @@ import lombok.extern.slf4j.Slf4j;
 public class DocumentQueryService {
 
     private final DocumentRepository documentRepository;
-    private final DocumentVersionRepository versionRepository;
     private final AuditLogService auditLogService;
-    @Auditable(action = "VIEW_DOCUMENTS_LIST", entityType = "ConstructionProject")
+
     @Transactional(readOnly = true)
     public List<DocumentDto> getDocumentsByProject(UUID projectId) {
-        List<Document> documents = documentRepository.findByProjectId(projectId);
+        List<Document> documents = documentRepository.findByProjectIdWithRelations(projectId);
         return documents.stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
-    @Auditable(action = "VIEW_DOCUMENT_DETAIL", entityType = "Document")
+
     @Transactional(readOnly = true)
     public Page<DocumentDto> getDocumentsByProject(UUID projectId, Pageable pageable) {
+        // Для пагинации оставляем базовый метод без JOIN FETCH versions
         return documentRepository.findByProjectId(projectId, pageable)
                 .map(this::toDto);
     }

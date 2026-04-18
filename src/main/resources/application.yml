@@ -38,9 +38,12 @@ server:
 
 logging:
   level:
-    org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: DEBUG
-    com.example.zadanieslave.audit: DEBUG
-    org.springframework.aop: DEBUG
+    root: INFO
+    org.springframework.web: DEBUG
+    org.springframework.transaction: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.example.zadanieslave: DEBUG
 app:
   xml:
     xsd-path: classpath:xsd/schema.xsd

@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import com.example.zadanieslave.audit.Auditable;
-import com.example.zadanieslave.repository.AuditLogRepository;
 import java.io.IOException;
 import java.util.UUID;
 
@@ -24,9 +22,7 @@ public class DocumentUploadService {
     private final ConstructionProjectRepository projectRepository;
     private final XmlProcessingService xmlProcessingService;
     private final FileStorageService fileStorageService; // реализуем далее
-    private final AuditLogRepository auditLogRepository;
     private final AuditLogService auditLogService;
-    @Auditable(action = "UPLOAD_DOCUMENT", entityType = "Document")
     @Transactional
     public UploadResponse uploadDocument(MultipartFile file, UUID projectId, UUID userId) throws IOException {
         // 1. Получаем сущности
@@ -60,17 +56,10 @@ public class DocumentUploadService {
         version = versionRepository.save(version);
 
         // 5. Запускаем асинхронную валидацию и парсинг
-        xmlProcessingService.validateAndParse(version, file.getBytes());
+        xmlProcessingService.validateAndParse(version.getId(), file.getBytes());
 
-        AuditLog auditLog = AuditLog.builder()
-                .action("UPLOAD_DOCUMENT")
-                .entityType("Document")
-                .entityId(document.getId())
-                .user(user)
-                .details("Загружен файл: " + file.getOriginalFilename())
-                .build();
-        auditLogRepository.save(auditLog);
-// Аудит (выполняется в отдельной транзакции, не влияет на основную)
+
+// 6.Аудит
         try {
             auditLogService.log(
                     "UPLOAD_DOCUMENT",
@@ -83,18 +72,7 @@ public class DocumentUploadService {
             // Логируем ошибку, но не прерываем основной поток
             log.error("Не удалось сохранить аудит", e);
         }
-        // 6. Возвращаем ответ
+        // 7. Возвращаем ответ
         return new UploadResponse(document.getId(), version.getId(), "PENDING_VALIDATION");
-    }
-    public UUID testAudit() {
-        AuditLog log = AuditLog.builder()
-                .action("TEST_MANUAL")
-                .entityType("Test")
-                .entityId(UUID.randomUUID())
-                .user(null)
-                .details("Ручной тест аудита")
-                .build();
-        auditLogRepository.save(log);
-        return log.getId();
     }
 }

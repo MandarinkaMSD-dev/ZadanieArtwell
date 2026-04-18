@@ -1,6 +1,7 @@
 package com.example.zadanieslave.service;
 
 import com.example.zadanieslave.model.entity.DocumentVersion;
+import com.example.zadanieslave.repository.DocumentVersionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,9 +20,9 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -32,9 +33,13 @@ public class XmlProcessingService {
     private Resource xsdResource;
 
     private final DocumentVersionService versionService;
+    private final DocumentVersionRepository versionRepository;
 
     @Async
-    public void validateAndParse(DocumentVersion version, byte[] xmlContent) {
+    public void validateAndParse(UUID versionId, byte[] xmlContent) {
+        DocumentVersion version = versionRepository.findById(versionId)
+                .orElseThrow(() -> new IllegalArgumentException("Версия не найдена: " + versionId));
+
         log.info("Начало обработки версии документа {}", version.getId());
 
         // 1. Валидация по XSD
@@ -58,8 +63,10 @@ public class XmlProcessingService {
             SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
             Schema schema = factory.newSchema(xsdResource.getURL());
             Validator validator = schema.newValidator();
+            validator.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            validator.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             validator.validate(new StreamSource(new ByteArrayInputStream(xmlContent)));
-            return null; // успешно
+            return null;
         } catch (SAXException e) {
             return "Ошибка валидации XML: " + e.getMessage();
         } catch (IOException e) {
@@ -71,15 +78,19 @@ public class XmlProcessingService {
         Map<String, Object> data = new HashMap<>();
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(new ByteArrayInputStream(xmlContent));
 
-            // Пример извлечения данных (подставьте свои пути XPath)
             data.put("documentNumber", getTagValue(doc, "DocumentNumber"));
             data.put("documentDate", getTagValue(doc, "DocumentDate"));
             data.put("contractor", getTagValue(doc, "Contractor"));
-            // Добавьте другие поля по вашей схеме
-
         } catch (Exception e) {
             log.error("Ошибка парсинга XML", e);
         }
